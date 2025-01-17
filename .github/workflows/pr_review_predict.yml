@@ -1,0 +1,53 @@
+name: PR Review Prediction Workflow
+
+# ワークフローの実行条件
+on:
+  pull_request:           # PRがオープンされた場合
+    branches:
+      - main              # mainブランチへのPRで実行
+  workflow_dispatch:      # 手動での実行も可能
+
+jobs:
+  predict:
+    runs-on: ubuntu-latest  # Ubuntu仮想マシン上で実行
+
+    steps:
+      # 1. GitHubリポジトリをチェックアウト
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # 2. Pythonのセットアップ
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      # 3. 依存関係のインストール
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # 4. PRレビュー予測スクリプトを実行
+      - name: Run PR Review Prediction Script
+        run: |
+          python main.py --project Glance \
+                         --data_path ./data/ \
+                         --start_date 2023-01-01 \
+                         --end_date 2023-03-31 \
+                         --output_dir ./output/
+
+      # 5. 成果物（予測結果）をArtifactsとして保存
+      - name: Upload prediction results
+        uses: actions/upload-artifact@v3
+        with:
+          name: prediction-results
+          path: ./output/
+
+      # 6. GitHub Pagesで結果を公開（オプション）
+      - name: Deploy results to GitHub Pages
+        if: success()
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./output/
