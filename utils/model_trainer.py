@@ -3,6 +3,7 @@ from sklearn.metrics import f1_score
 import numpy as np
 import joblib
 import os
+import json
 
 def train_model(metrics_list, objective_list, output_dir):
     """
@@ -31,6 +32,7 @@ def train_model(metrics_list, objective_list, output_dir):
     model.fit(X, y)
 
     # 学習データに対する予測
+    prediction_probs = model.predict_proba(X)
     predictions = model.predict(X)
 
     # モデルの性能を評価 (F1スコア)
@@ -41,5 +43,10 @@ def train_model(metrics_list, objective_list, output_dir):
     model_path = os.path.join(output_dir, "balanced_random_forest_model.pkl")
     joblib.dump(model, model_path)
     print(f"Model saved to: {model_path}")
+
+    predictions_path = os.path.join(output_dir, "predictions2.json")
+    with open(predictions_path, 'w') as f:
+        json.dump(predictions.tolist(), f)  # Numpy配列をリストに変換して保存
+    print(f"Predictions saved to: {predictions_path}")
 
     return model, predictions

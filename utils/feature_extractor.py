@@ -6,7 +6,7 @@ def extract_features(pr_data, start_date, end_date):
     for pr in pr_data:
         # 特徴量の作成
         metrics_list.append([
-            len(pr.get('messages', [])),  # メッセージ数
+            len(pr.get('messages', [])),  # メッセージ数 (この中のmessageの数を計測する)
             pr.get('lines_inserted', 0), # 追加行数
             pr.get('lines_deleted', 0)   # 削除行数
         ])
