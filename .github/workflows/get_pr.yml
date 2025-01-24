@@ -40,6 +40,24 @@ jobs:
           echo "Saved PR data for PR #${PR_NUMBER} as pr_${PR_NUMBER}.json"
           ls -la $GITHUB_WORKSPACE/pr_data
 
+      # 保存したデータをリポジトリにコミットしてプッシュ
+      - name: Commit and push PR data
+        run: |
+          # Git設定を行う
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+
+          # ディレクトリ内のファイルをステージング
+          git add pr_data
+
+          # 変更がある場合のみコミット
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "Save PR data for PR #${{ github.event.pull_request.number }}"
+            git push origin HEAD
+          fi
+
       # 保存したデータを確認
       - name: Display saved PR data
         run: |
