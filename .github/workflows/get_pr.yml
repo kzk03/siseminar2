@@ -6,6 +6,8 @@ on:
       - opened
       - closed
       - synchronize
+    paths-ignore:
+      - 'pr_data/**' # pr_dataディレクトリ以下の変更を無視する
 
 jobs:
   save_pr_data:
@@ -16,17 +18,22 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
+      # 自己トリガーをスキップ
+      - name: Skip if triggered by GitHub Actions bot
+        if: ${{ github.actor == 'github-actions[bot]' }}
+        run: echo "Skipping execution triggered by GitHub Actions bot."
+
       # PR情報を取得して保存
       - name: Save PR data locally
         id: save_pr_data
         run: |
-          # ディレクトリ作成
+          # 作業ディレクトリの作成
           mkdir -p $GITHUB_WORKSPACE/pr_data
 
-          # 環境変数でPR番号を取得
+          # 環境変数からPR番号を取得
           PR_NUMBER="${{ github.event.pull_request.number }}"
 
-          # JSON形式でデータを保存（PR番号ごとにファイルを分割）
+          # JSON形式でデータを保存
           echo "${{ toJson(github.event) }}" > "$GITHUB_WORKSPACE/pr_data/pr_${PR_NUMBER}.json"
 
           # 保存したファイルの確認
