@@ -12,6 +12,9 @@ jobs:
   save_pr_data:
     runs-on: ubuntu-latest
 
+    permissions:
+      contents: write
+
     steps:
       # 1. リポジトリをチェックアウト
       - name: Checkout repository
