@@ -23,7 +23,7 @@ jobs:
           set -e
           git fetch origin
           git checkout -b pr-data || git checkout pr-data
-          git pull origin pr-data || echo "No existing branch found, starting fresh."
+          git pull --rebase origin pr-data || echo "No existing branch found, starting fresh."
           mkdir -p pr_data
           cp -r pr_data/* ./pr_data || echo "No existing data to copy."
 
@@ -55,8 +55,10 @@ jobs:
           git checkout -b pr-data || git checkout pr-data
           git pull --rebase origin pr-data || echo "No existing branch found, starting fresh."
           cp -r pr_data/* .
-          git add pr_data
-          git commit -m "Add PR data for PR #${PR_NUMBER} - ${EVENT_TYPE} at ${TIMESTAMP}" || echo "No changes to commit."
-          git push origin pr-data
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          if [ "$(git status --porcelain)" ]; then
+            git add pr_data
+            git commit -m "Add PR data for PR #${PR_NUMBER} - ${EVENT_TYPE} at ${TIMESTAMP}"
+            git push origin pr-data
+          else
+            echo "No changes to push."
+          fi
