@@ -24,9 +24,9 @@ jobs:
           mkdir -p pr_data
           PR_NUMBER="${{ github.event.pull_request.number }}"
           EVENT_TYPE="${{ github.event.action }}"
-          TIMESTAMP=$(date +%Y%m%d_%H%M%S)"
+          TIMESTAMP=$(date +%Y%m%d_%H%M%S)  # 修正点: 余分な `"` を削除
           echo "${{ toJson(github.event) }}" > "pr_data/pr_${PR_NUMBER}_${EVENT_TYPE}_${TIMESTAMP}.json"
-          echo "PR data saved successfully."
+          echo "::notice::PR data saved successfully!"  # 修正点: `action::` を `::notice::` に変更
 
       # 3. GitHub Artifacts にアップロード
       - name: Upload PR data as artifact
