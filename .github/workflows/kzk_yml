@@ -1,0 +1,31 @@
+name: Save PR Data per PR
+
+on:
+  pull_request:
+    types:
+      - opened
+
+jobs:
+  save_pr_data:
+    runs-on: ubuntu-latest
+
+    steps:
+      # リポジトリをチェックアウト
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # PR情報を取得して保存
+      - name: Save PR data locally
+        run: |
+          mkdir -p $GITHUB_WORKSPACE/pr_data
+          PR_NUMBER="${{ github.event.pull_request.number }}"
+          EVENT_TYPE="${{ github.event.action }}"
+          TIMESTAMP=$(date +%Y%m%d_%H%M%S)"
+          echo "${{ toJson(github.event) }}" > "$GITHUB_WORKSPACE/pr_data/pr_${PR_NUMBER}_${EVENT_TYPE}_${TIMESTAMP}.json"
+
+      # Artifacts にアップロード
+      - name: Upload PR data as artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: pr_data
+          path: $GITHUB_WORKSPACE/pr_data
