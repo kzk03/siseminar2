@@ -17,28 +17,35 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # 2. PR情報を取得して保存
+      # 2. 過去データをリモートから取得
+      - name: Pull existing data from pr-data branch
+        run: |
+          set -e
+          git fetch origin
+          git checkout -b pr-data || git checkout pr-data
+          git pull origin pr-data || echo "No existing branch found, starting fresh."
+          mkdir -p pr_data
+          cp -r pr_data/* ./pr_data || echo "No existing data to copy."
+
+      # 3. PR情報を取得して保存
       - name: Save PR data locally
         run: |
-          set -e  # エラー時にスクリプトを停止
-          mkdir -p pr_data
+          set -e
           PR_NUMBER="${{ github.event.pull_request.number }}"
           EVENT_TYPE="${{ github.event.action }}"
           TIMESTAMP=$(date +%Y%m%d_%H%M%S)
-
-          # JSONデータをファイルに保存
+          mkdir -p pr_data
           echo '${{ toJson(github.event) }}' | jq '.' > "pr_data/pr_${PR_NUMBER}_${EVENT_TYPE}_${TIMESTAMP}.json"
-
           echo "PR data saved successfully."
 
-      # 3. GitHub Artifacts にアップロード
+      # 4. GitHub Artifacts にアップロード
       - name: Upload PR data as artifact
         uses: actions/upload-artifact@v3
         with:
           name: pr_data
           path: pr_data
 
-      # 4. `pr-data` ブランチに保存 (同じリポジトリに強制プッシュ)
+      # 5. データをリモートブランチに保存
       - name: Push PR data to pr-data branch
         run: |
           set -e
@@ -46,9 +53,10 @@ jobs:
           git config --global user.email "github-actions@github.com"
           git fetch origin
           git checkout -b pr-data || git checkout pr-data
+          git pull --rebase origin pr-data || echo "No existing branch found, starting fresh."
           cp -r pr_data/* .
           git add pr_data
-          git commit -m "Add PR data for PR #${PR_NUMBER} - ${EVENT_TYPE} at ${TIMESTAMP}"
-          git push --force origin pr-data
+          git commit -m "Add PR data for PR #${PR_NUMBER} - ${EVENT_TYPE} at ${TIMESTAMP}" || echo "No changes to commit."
+          git push origin pr-data
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
