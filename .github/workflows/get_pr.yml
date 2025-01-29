@@ -7,7 +7,7 @@ on:
       - closed
       - synchronize
     paths-ignore:
-      - 'jsons/**' # jsonsディレクトリ以下の変更を無視する
+      - 'pr_data/**' # pr_dataディレクトリ以下の変更を無視する
 
 jobs:
   save_pr_data:
@@ -23,32 +23,32 @@ jobs:
         if: ${{ github.actor == 'github-actions[bot]' }}
         run: echo "Skipping execution triggered by GitHub Actions bot."
 
-      # PR情報を取得して保存（jsonsディレクトリに保存）
-      - name: Save PR data in jsons directory
+      # PR情報を取得して保存
+      - name: Save PR data locally
         id: save_pr_data
         run: |
-          # jsonsディレクトリの作成（リポジトリ内）
-          mkdir -p $GITHUB_WORKSPACE/jsons
+          # 作業ディレクトリの作成
+          mkdir -p $GITHUB_WORKSPACE/pr_data
 
           # 環境変数からPR番号を取得
           PR_NUMBER="${{ github.event.pull_request.number }}"
 
-          # JSON形式でデータを保存（jsonsディレクトリに）
-          echo "${{ toJson(github.event) }}" > "$GITHUB_WORKSPACE/jsons/pr_${PR_NUMBER}.json"
+          # JSON形式でデータを保存
+          echo "${{ toJson(github.event) }}" > "$GITHUB_WORKSPACE/pr_data/pr_${PR_NUMBER}.json"
 
           # 保存したファイルの確認
-          echo "Saved PR data for PR #${PR_NUMBER} as jsons/pr_${PR_NUMBER}.json"
-          ls -la $GITHUB_WORKSPACE/jsons
+          echo "Saved PR data for PR #${PR_NUMBER} as pr_${PR_NUMBER}.json"
+          ls -la $GITHUB_WORKSPACE/pr_data
 
-      # 保存したデータをリポジトリのjsonsディレクトリにコミットしてプッシュ
-      - name: Commit and push PR data to jsons directory
+      # 保存したデータをリポジトリにコミットしてプッシュ
+      - name: Commit and push PR data
         run: |
           # Git設定を行う
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
 
-          # jsonsディレクトリ内のファイルをステージング
-          git add jsons
+          # ディレクトリ内のファイルをステージング
+          git add pr_data
 
           # 変更がある場合のみコミット
           if git diff --cached --quiet; then
@@ -57,11 +57,3 @@ jobs:
             git commit -m "Save PR data for PR #${{ github.event.pull_request.number }}"
             git push origin HEAD
           fi
-
-      # 保存したデータを確認
-      - name: Display saved PR data
-        run: |
-          for file in $GITHUB_WORKSPACE/jsons/*.json; do
-            echo "Content of $file:"
-            cat $file
-          done
