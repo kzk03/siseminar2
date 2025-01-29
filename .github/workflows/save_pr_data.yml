@@ -22,8 +22,10 @@ jobs:
         run: |
           set -e
           git fetch origin
-          git checkout -b pr-data || git checkout pr-data
-          git pull --rebase origin pr-data || echo "No existing branch found, starting fresh."
+          # ブランチが存在する場合はチェックアウト、ない場合は新規作成
+          git rev-parse --verify pr-data && git checkout pr-data || git checkout -b pr-data
+          # リベースしてリモートの最新履歴を取得
+          git pull --rebase origin pr-data || (echo "Rebase failed, resolving manually" && git rebase --abort && git reset --hard origin/pr-data)
           mkdir -p pr_data
           cp -r pr_data/* ./pr_data || echo "No existing data to copy."
 
@@ -51,10 +53,18 @@ jobs:
           set -e
           git config --global user.name "github-actions"
           git config --global user.email "github-actions@github.com"
+          
+          # フェッチしてリモートの状態を取得
           git fetch origin
-          git checkout -b pr-data || git checkout pr-data
-          git pull --rebase origin pr-data || echo "No existing branch found, starting fresh."
+          # ブランチが存在する場合はチェックアウト、ない場合は新規作成
+          git rev-parse --verify pr-data && git checkout pr-data || git checkout -b pr-data
+          # リベースして競合解消
+          git pull --rebase origin pr-data || (echo "Rebase failed, resolving manually" && git rebase --abort && git reset --hard origin/pr-data)
+
+          # データをコピー
           cp -r pr_data/* .
+          
+          # ステージングしてプッシュ（変更がある場合のみ）
           if [ "$(git status --porcelain)" ]; then
             git add pr_data
             git commit -m "Add PR data for PR #${PR_NUMBER} - ${EVENT_TYPE} at ${TIMESTAMP}"
