@@ -11,7 +11,7 @@ on:
 jobs:
   save_pr_data:
     runs-on: ubuntu-latest
-    
+
     steps:
       # 1. リポジトリをチェックアウト
       - name: Checkout repository
@@ -24,9 +24,12 @@ jobs:
           mkdir -p pr_data
           PR_NUMBER="${{ github.event.pull_request.number }}"
           EVENT_TYPE="${{ github.event.action }}"
-          TIMESTAMP=$(date +%Y%m%d_%H%M%S)  # 修正点: 余分な `"` を削除
-          echo "${{ toJson(github.event) }}" > "pr_data/pr_${PR_NUMBER}_${EVENT_TYPE}_${TIMESTAMP}.json"
-          echo "::notice::PR data saved successfully!"  # 修正点: `action::` を `::notice::` に変更
+          TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+
+          # JSONデータをファイルに保存
+          echo '${{ toJson(github.event) }}' | jq '.' > "pr_data/pr_${PR_NUMBER}_${EVENT_TYPE}_${TIMESTAMP}.json"
+
+          echo "PR data saved successfully."
 
       # 3. GitHub Artifacts にアップロード
       - name: Upload PR data as artifact
@@ -35,7 +38,7 @@ jobs:
           name: pr_data
           path: pr_data
 
-      # 4. `pr-data` ブランチに保存 (同じリポジトリ)
+      # 4. `pr-data` ブランチに保存 (同じリポジトリに強制プッシュ)
       - name: Push PR data to pr-data branch
         run: |
           set -e
@@ -43,26 +46,9 @@ jobs:
           git config --global user.email "github-actions@github.com"
           git fetch origin
           git checkout -b pr-data || git checkout pr-data
-          git pull origin pr-data || echo "Branch pr-data does not exist yet."
           cp -r pr_data/* .
           git add pr_data
           git commit -m "Add PR data for PR #${PR_NUMBER} - ${EVENT_TYPE} at ${TIMESTAMP}"
-          git push origin pr-data
+          git push --force origin pr-data
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      # 5. 別のリポジトリに保存 (オプション)
-      - name: Push PR data to another repository
-        run: |
-          set -e
-          git clone https://github.com/YOUR-ORG/YOUR-OTHER-REPO.git
-          cd YOUR-OTHER-REPO
-          mkdir -p pr_data
-          cp -r $GITHUB_WORKSPACE/pr_data/* pr_data/
-          git config --global user.name "github-actions"
-          git config --global user.email "github-actions@github.com"
-          git add pr_data
-          git commit -m "Add PR data for PR #${PR_NUMBER}"
-          git push origin main
-        env:
-          GITHUB_TOKEN: ${{ secrets.YOUR_PERSONAL_ACCESS_TOKEN }}
