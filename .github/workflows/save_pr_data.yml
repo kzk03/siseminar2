@@ -24,8 +24,11 @@ jobs:
           mkdir -p pr_data
           PR_NUMBER="${{ github.event.pull_request.number }}"
           EVENT_TYPE="${{ github.event.action }}"
-          TIMESTAMP=$(date +%Y%m%d_%H%M%S)"
-          echo "${{ toJson(github.event) }}" > "pr_data/pr_${PR_NUMBER}_${EVENT_TYPE}_${TIMESTAMP}.json"
+          TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+
+          # JSONデータをファイルに保存
+          echo '${{ toJson(github.event) }}' | jq '.' > "pr_data/pr_${PR_NUMBER}_${EVENT_TYPE}_${TIMESTAMP}.json"
+
           echo "PR data saved successfully."
 
       # 3. GitHub Artifacts にアップロード
@@ -66,4 +69,3 @@ jobs:
           git push origin main
         env:
           GITHUB_TOKEN: ${{ secrets.YOUR_PERSONAL_ACCESS_TOKEN }}
-
