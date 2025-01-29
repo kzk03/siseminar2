@@ -19,7 +19,7 @@ jobs:
       - name: Create test directory if not exists
         run: |
           mkdir -p test
-          echo '{"message": "This is a test JSON file"}' > test/a.json
+          echo '{"message": "This is a test JSON file"}' > test/b.json
 
       - name: Commit and push changes
         run: |
