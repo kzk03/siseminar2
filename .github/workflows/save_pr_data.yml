@@ -58,4 +58,4 @@ jobs:
           git commit -m "Add PR data for PR #${{ github.event.pull_request.number }} - ${{ github.event.action }} at $(date +%Y-%m-%d_%H:%M:%S)"
           git push origin pr-data
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} #change
