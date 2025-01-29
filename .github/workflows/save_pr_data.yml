@@ -17,7 +17,14 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # 2. PR情報を取得して保存
+      # 2. `pr-data` ブランチを取得（なければ作成）
+      - name: Fetch or create pr-data branch
+        run: |
+          git fetch origin
+          git checkout -b pr-data || git checkout pr-data
+          git pull --rebase origin pr-data || echo "Branch pr-data does not exist yet."
+
+      # 3. PR情報を取得して保存
       - name: Save PR data locally
         run: |
           set -e  # エラー時にスクリプトを停止
@@ -25,30 +32,30 @@ jobs:
           PR_NUMBER="${{ github.event.pull_request.number }}"
           EVENT_TYPE="${{ github.event.action }}"
           TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+          FILE_PATH="pr_data/pr_${PR_NUMBER}_${EVENT_TYPE}_${TIMESTAMP}.json"
 
-          # JSONデータをファイルに保存
-          echo '${{ toJson(github.event) }}' | jq '.' > "pr_data/pr_${PR_NUMBER}_${EVENT_TYPE}_${TIMESTAMP}.json"
+          # JSONデータをファイルに追加（既存データは保持）
+          echo '${{ toJson(github.event) }}' | jq '.' > "$FILE_PATH"
 
-          echo "PR data saved successfully."
+          echo "PR data saved successfully: $FILE_PATH"
 
-      # 3. GitHub Artifacts にアップロード
+      # 4. GitHub Artifacts にアップロード
       - name: Upload PR data as artifact
         uses: actions/upload-artifact@v3
         with:
           name: pr_data
           path: pr_data
 
-      # 4. `pr-data` ブランチに保存 (同じリポジトリに強制プッシュ)
+      # 5. `pr-data` ブランチに新規ファイルを追加（削除せずに保持）
       - name: Push PR data to pr-data branch
         run: |
           set -e
           git config --global user.name "github-actions"
           git config --global user.email "github-actions@github.com"
-          git fetch origin
-          git checkout -b pr-data || git checkout pr-data
-          cp -r pr_data/* .
+
+          # `pr_data` ディレクトリ内の新しいデータを追加
           git add pr_data
-          git commit -m "Add PR data for PR #${PR_NUMBER} - ${EVENT_TYPE} at ${TIMESTAMP}"
-          git push --force origin pr-data
+          git commit -m "Add PR data for PR #${{ github.event.pull_request.number }} - ${{ github.event.action }} at $(date +%Y-%m-%d_%H:%M:%S)"
+          git push origin pr-data
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
