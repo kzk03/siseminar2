@@ -1,0 +1,29 @@
+name: Upload a.json on PR
+
+on:
+  pull_request:
+    types:
+      - opened
+
+jobs:
+  upload-json:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Create test directory if not exists
+        run: |
+          mkdir -p test
+          echo '{"message": "This is a test JSON file"}' > test/a.json
+
+      - name: Commit and push changes
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "github-actions@github.com"
+          git add test/a.json
+          git commit -m "Add a.json to test directory on PR creation"
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
