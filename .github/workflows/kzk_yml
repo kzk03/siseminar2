@@ -1,4 +1,4 @@
-name: Save PR Data per PR
+name: kzk
 
 on:
   pull_request:
