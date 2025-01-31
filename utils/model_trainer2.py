@@ -5,25 +5,23 @@ import os
 
 def train_model(metrics_list, objective_list, output_dir):
     """
-    Balanced Random Forest を使用してモデルを学習し、保存する
+    Balanced Random Forestを使用してモデルを学習し、保存する
     :param metrics_list: 特徴量のリスト (X)
     :param objective_list: 目的変数のリスト (y)
-    :param output_dir: モデルの保存先ディレクトリ
+    :param output_dir: モデルを保存するディレクトリ
+    :return: 学習済みモデルの保存パス
     """
     if not metrics_list or not objective_list:
         raise ValueError("Error: Input data (metrics_list or objective_list) is empty.")
 
-    # 特徴量と目的変数を Numpy 配列に変換
     X = np.array(metrics_list)
     y = np.array(objective_list)
 
     print(f"Training data shape: X={X.shape}, y={y.shape}")
 
-    # Balanced Random Forest を初期化
     print("Training Balanced Random Forest Classifier...")
     model = BalancedRandomForestClassifier(random_state=0)
 
-    # モデルを学習
     model.fit(X, y)
 
     # モデルを保存
