@@ -15,7 +15,7 @@ jobs:
     steps:
       # 1. リポジトリをチェックアウト
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       # 2. 過去データをリモートから取得
       - name: Pull existing data from pr-data branch
@@ -42,7 +42,7 @@ jobs:
 
       # 4. GitHub Artifacts にアップロード
       - name: Upload PR data as artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: pr_data
           path: pr_data
