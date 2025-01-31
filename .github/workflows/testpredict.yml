@@ -9,7 +9,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4  # バージョン更新
 
       - name: Pull PR data and model from pr-data branch
         run: |
