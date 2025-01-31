@@ -1,7 +1,12 @@
 name: Train Model with PR Data
 
 on:
-  pull_request:  # PR ごとに実行 (テスト用)
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - closed
 
 jobs:
   train_model:
@@ -11,10 +16,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Pull PR data from pr-data branch
+      - name: Pull PR data from main branch
         run: |
-          git fetch origin pr-data || echo "No pr-data branch found"
-          git checkout pr-data || git checkout -b pr-data
+          git fetch origin main || echo "No main branch found"
+          git checkout main
+          git pull --rebase origin main || (echo "Rebase failed, resolving manually" && git rebase --abort && git reset --hard origin/main)
           mkdir -p pr_data
           cp -r pr_data/* pr_data/ || echo "No PR data found."
 
@@ -27,7 +33,13 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Train model
-        run: python ./../../scripts/train.py
+        run: |
+          if [ -d "pr_data" ]; then
+            python scripts/train.py
+          else
+            echo "No PR data available. Skipping training."
+            exit 1
+          fi
 
       - name: Upload trained model as artifact
         uses: actions/upload-artifact@v4
@@ -35,11 +47,13 @@ jobs:
           name: trained-model
           path: models/balanced_random_forest_model.pkl
 
-      - name: Push trained model to pr-data branch
+      - name: Push trained model to main branch
         run: |
           git config --global user.name "github-actions"
           git config --global user.email "github-actions@github.com"
           cp models/balanced_random_forest_model.pkl .
+          git checkout main
+          git pull --rebase origin main || (echo "Rebase failed, resolving manually" && git rebase --abort && git reset --hard origin/main)
           git add balanced_random_forest_model.pkl
           git commit -m "Update trained model on PR" || echo "No changes to commit"
-          git push origin pr-data || echo "No changes to push"
+          git push origin main || echo "No changes to push"
