@@ -2,7 +2,7 @@ name: Daily Model Trainer
 
 on:
   schedule:
-    - cron: '15 5 * * *' # 毎日0時に実行
+    - cron: '0 15 * * *' # 毎日0時に実行
   workflow_dispatch: # 手動実行も可能に
 
 jobs:
