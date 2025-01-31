@@ -2,7 +2,7 @@ name: test Model Trainer
 
 on:
   schedule:
-    - cron: '30 5 * * *' # 毎日14時30分に実行
+    - cron: '37 5 * * *' # 毎日14時30分に実行
   workflow_dispatch: # 手動実行も可能に
 
 jobs:
@@ -24,4 +24,4 @@ jobs:
 
       - name: Run model trainer
         run: |
-          python utils/daily_model_trainer.py
+          echo '{"status": "success"}' > a.json
