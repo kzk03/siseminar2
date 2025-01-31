@@ -1,23 +1,22 @@
-name: Predict and Evaluate Model
+name: Train Model with PR Data
 
 on:
-  pull_request:  # PR ごとに実行
+  pull_request:  # PR ごとに実行 (テスト用)
 
 jobs:
-  predict_and_evaluate:
+  train_model:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4  # バージョン更新
 
-      - name: Pull PR data and model from pr-data branch
+      - name: Pull PR data from pr-data branch
         run: |
           git fetch origin pr-data || echo "No pr-data branch found"
           git checkout pr-data || git checkout -b pr-data
-          mkdir -p pr_data models
+          mkdir -p pr_data
           cp -r pr_data/* pr_data/ || echo "No PR data found."
-          cp balanced_random_forest_model.pkl models/ || echo "No trained model found."
 
       - name: Setup Python
         uses: actions/setup-python@v4
@@ -27,13 +26,20 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Predict and evaluate
-        run: python scripts/predict.py
+      - name: Train model
+        run: python scripts/train.py
 
-      - name: Get evaluation results
-        run: cat results/report.txt
-
-      - name: Post evaluation results to PR
-        uses: mshick/add-pr-comment@v2
+      - name: Upload trained model as artifact
+        uses: actions/upload-artifact@v4  # バージョン更新
         with:
-          message: "🔍 **モデル評価結果**:\n$(cat results/report.txt)"
+          name: trained-model
+          path: models/balanced_random_forest_model.pkl
+
+      - name: Push trained model to pr-data branch
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "github-actions@github.com"
+          cp models/balanced_random_forest_model.pkl .
+          git add balanced_random_forest_model.pkl
+          git commit -m "Update trained model on PR" || echo "No changes to commit"
+          git push origin pr-data || echo "No changes to push"

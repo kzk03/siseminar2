@@ -30,7 +30,7 @@ jobs:
         run: python scripts/train.py
 
       - name: Upload trained model as artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: trained-model
           path: models/balanced_random_forest_model.pkl
