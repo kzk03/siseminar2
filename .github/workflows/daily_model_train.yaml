@@ -1,0 +1,27 @@
+name: Daily Model Trainer
+
+on:
+  schedule:
+    - cron: '10 14 * * *' # 毎日0時に実行
+  workflow_dispatch: # 手動実行も可能に
+
+jobs:
+  run_model_trainer:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Run model trainer
+        run: |
+          python utils/daily_model_trainer.py
