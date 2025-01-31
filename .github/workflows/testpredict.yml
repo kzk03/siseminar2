@@ -1,0 +1,39 @@
+name: Predict and Evaluate Model
+
+on:
+  pull_request:  # PR ごとに実行
+
+jobs:
+  predict_and_evaluate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Pull PR data and model from pr-data branch
+        run: |
+          git fetch origin pr-data || echo "No pr-data branch found"
+          git checkout pr-data || git checkout -b pr-data
+          mkdir -p pr_data models
+          cp -r pr_data/* pr_data/ || echo "No PR data found."
+          cp balanced_random_forest_model.pkl models/ || echo "No trained model found."
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.8'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Predict and evaluate
+        run: python scripts/predict.py
+
+      - name: Get evaluation results
+        run: cat results/report.txt
+
+      - name: Post evaluation results to PR
+        uses: mshick/add-pr-comment@v2
+        with:
+          message: "🔍 **モデル評価結果**:\n$(cat results/report.txt)"
