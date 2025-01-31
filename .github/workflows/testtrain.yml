@@ -1,4 +1,4 @@
-name: Train Model with PR Data
+name: TEST_Train Model with PR Data
 
 on:
   pull_request:
@@ -57,3 +57,6 @@ jobs:
           git add balanced_random_forest_model.pkl
           git commit -m "Update trained model on PR" || echo "No changes to commit"
           git push origin main || echo "No changes to push"
+
+      - name: Debug: List directory contents
+        run: ls -R
