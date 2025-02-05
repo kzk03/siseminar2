@@ -1,0 +1,47 @@
+name: Train Model with PR Data
+
+on:
+  schedule:
+    - cron: "0 12 * * *"  # 毎日 12:00 UTC (日本時間 21:00) に実行
+  workflow_dispatch:  # 手動実行も可能
+
+jobs:
+  train_model:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Pull PR data from pr-data branch
+        run: |
+          git fetch origin pr-data || echo "No pr-data branch found"
+          git checkout pr-data || git checkout -b pr-data
+          mkdir -p pr_data
+          cp -r pr_data/* pr_data/ || echo "No PR data found."
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.8'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Train model
+        run: python scripts/train.py
+
+      - name: Upload trained model as artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: trained-model
+          path: models/balanced_random_forest_model.pkl
+
+      - name: Push trained model to pr-data branch
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "github-actions@github.com"
+          cp models/balanced_random_forest_model.pkl .
+          git add balanced_random_forest_model.pkl
+          git commit -m "Update trained model" || echo "No changes to commit"
+          git push origin pr-data || echo "No changes to push"

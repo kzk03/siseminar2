@@ -3,3 +3,7 @@ pandas
 scikit-learn
 joblib
 imbalanced-learn
+utils
+utils.data_loader2
+utils.feature_extractor2
+utils.model_trainer2
