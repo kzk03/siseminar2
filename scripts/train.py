@@ -2,11 +2,9 @@ import os
 import json
 import joblib
 import datetime
+from collections import Counter
 from imblearn.ensemble import BalancedRandomForestClassifier
 import numpy as np
-#from utils.data_loader2 import load_pr_data
-#from utils.feature_extractor2 import extract_features
-#from utils.model_trainer2 import train_model
 
 def train_model(metrics_list, objective_list, output_dir):
     """
@@ -22,11 +20,17 @@ def train_model(metrics_list, objective_list, output_dir):
     X = np.array(metrics_list)
     y = np.array(objective_list)
 
+    # クラスの分布を確認
+    class_counts = Counter(y)
+    print(f"Class distribution in y: {class_counts}")
+
+    if len(class_counts) < 2:
+        raise ValueError("Error: The target variable y needs at least 2 classes. Found only one.")
+
     print(f"Training data shape: X={X.shape}, y={y.shape}")
-
     print("Training Balanced Random Forest Classifier...")
-    model = BalancedRandomForestClassifier(random_state=0)
 
+    model = BalancedRandomForestClassifier(random_state=0)
     model.fit(X, y)
 
     # モデルを保存
@@ -42,44 +46,53 @@ def load_pr_data(data_path):
     pr_data = []
     for file in os.listdir(data_path):
         if file.endswith(".json"):
-            with open(os.path.join(data_path, file), 'r') as f:
-                pr_data.append(json.load(f))
+            try:
+                with open(os.path.join(data_path, file), 'r', encoding='utf-8') as f:
+                    pr_data.append(json.load(f))
+            except json.JSONDecodeError:
+                print(f"Warning: Skipping invalid JSON file {file}")
     return pr_data
 
+
 def extract_features(pr_data, start_date=None, end_date=None):
-    print(start_date)
-    
     """PRデータから特徴量を抽出"""
     metrics_list = []
     objective_list = []
 
     for pr in pr_data:
-        # 📌 `start_date` & `end_date` が指定されている場合のみフィルタリング
-        if start_date and end_date:
-            pr_date = pr.get("created_at", "2025-02-01")  # デフォルト値を設定
-            print(pr_date)
-            if not (start_date <= pr_date <= end_date):  # 期間外のデータはスキップ
-                continue
+        pull_request = pr.get("pull_request", {})
+
+        # `created_at` の取得と変換
+        created_at = pull_request.get("created_at", "2025-02-01T00:00:00Z")
+        created_at = datetime.datetime.strptime(created_at, "%Y-%m-%dT%H:%M:%SZ").date()
+
+        if start_date and end_date and not (start_date <= created_at <= end_date):
+            continue
 
         metrics_list.append([
-            pr.get('comments', 0),  # メッセージ数
-            pr.get('additions', 0), # 追加行数
-            pr.get('deletions', 0)   # 削除行数
+            pull_request.get('comments', 0),  # コメント数
+            pull_request.get('additions', 0), # 追加行数
+            pull_request.get('deletions', 0)  # 削除行数
         ])
-        
-        # PR内のメッセージを評価してラベルを決定
-        is_positive = pr.get('review_comments', 0) > 0
+
+        # `review_comments` の取得方法修正
+        review_comments = pull_request.get("review_comments", 0)
+        is_positive = review_comments > 0
         objective_list.append(1 if is_positive else 0)
-    
-    print(metrics_list)
+
+    # クラス分布のチェック
+    class_counts = Counter(objective_list)
+    print(f"Class distribution after feature extraction: {class_counts}")
+
     return metrics_list, objective_list
+
 
 def main():
     data_path = "pr_data"
 
     today = datetime.date.today()
-    start_date = (today - datetime.timedelta(days=30)).strftime("%Y-%m-%d")
-    end_date = today.strftime("%Y-%m-%d")
+    start_date = today - datetime.timedelta(days=30)
+    end_date = today
 
     output_dir = "models"
     os.makedirs(output_dir, exist_ok=True)
@@ -91,9 +104,12 @@ def main():
     metrics_list, objective_list = extract_features(pr_data, start_date, end_date)
 
     print("Training model...")
-    model_path = train_model(metrics_list, objective_list, output_dir)
+    try:
+        model_path = train_model(metrics_list, objective_list, output_dir)
+        print("Training complete. Model saved at:", model_path)
+    except ValueError as e:
+        print(f"Training failed: {e}")
 
-    print("Training complete. Model saved at:", model_path)
 
 if __name__ == "__main__":
     main()
