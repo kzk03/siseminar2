@@ -3,8 +3,6 @@ data/
 output/
 .env
 
-# モデルや予測結果はGit管理不要
-results/
 
 # Python関連
 __pycache__/

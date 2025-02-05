@@ -16,13 +16,13 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Pull PR data and model from pr-data branch
+      - name: Pull PR data and model from main branch
         run: |
-          git fetch origin pr-data || echo "No pr-data branch found"
-          git checkout pr-data || git checkout -b pr-data
+          git fetch origin main || echo "No main branch found"
+          git checkout main || git checkout -b main
           mkdir -p pr_data models
           cp -r pr_data/* pr_data/ || echo "No PR data found."
-          cp balanced_random_forest_model.pkl models/ || echo "No trained model found."
+          cp models/*.pkl models/ || echo "No trained model found."
 
       - name: Setup Python
         uses: actions/setup-python@v4
@@ -32,13 +32,19 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Predict and evaluate
-        run: python scripts/predict.py
+      - name: Run prediction
+        run: |
+          PR_JSON_FILES=$(ls pr_data/*.json 2>/dev/null || echo "")
+          if [ -z "$PR_JSON_FILES" ]; then
+            echo "No PR JSON data found, skipping prediction."
+            exit 1
+          fi
+          python scripts/predict.py --json_files $PR_JSON_FILES --model_dir models/
 
-      - name: Get evaluation results
-        run: cat results/report.txt
+      - name: Get prediction results
+        run: cat results/predictions.txt
 
-      - name: Post evaluation results to PR
+      - name: Post prediction results to PR
         uses: mshick/add-pr-comment@v2
         with:
-          message: "🔍 **モデル評価結果**:\n$(cat results/report.txt)"
+          message: "📊 **予測結果**:\n$(cat results/predictions.txt)"
