@@ -2,6 +2,11 @@ name: Predict and Evaluate Model
 
 on:
   pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - closed
 
 jobs:
   predict_and_evaluate:
