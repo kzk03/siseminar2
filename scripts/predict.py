@@ -75,7 +75,7 @@ def predict_with_model(model_dir, pr_data_path, start_date, end_date):
     :param pr_data_path: PRデータが保存されているディレクトリ
     :param start_date: 特徴量抽出の開始日
     :param end_date: 特徴量抽出の終了日
-    :return: 予測結果のリスト
+    :return: 予測結果のリスト（分類前のスコア）
     """
     # PRデータをロード
     print(f"Loading PR data from {pr_data_path}...")
@@ -100,11 +100,11 @@ def predict_with_model(model_dir, pr_data_path, start_date, end_date):
     # 特徴量を numpy array に変換
     X = np.array(metrics_list)
 
-    # 予測を実行
-    predictions = model.predict(X)
-    print("Predictions complete.")
+    # 予測確率を取得
+    prediction_scores = model.predict_proba(X)[:, 1]  # 1クラス（肯定クラス）の確率のみ取得
+    print("Prediction probabilities complete.")
 
-    return predictions
+    return prediction_scores
 
 if __name__ == "__main__":
     model_directory = "models"
@@ -117,6 +117,7 @@ if __name__ == "__main__":
 
     try:
         results = predict_with_model(model_directory, pr_data_directory, start_date, end_date)
-        print("Prediction results:", results)
+        print("Prediction scores:", results)  # 0または1ではなくスコアを出力
     except Exception as e:
         print(f"Error during prediction: {e}")
+
