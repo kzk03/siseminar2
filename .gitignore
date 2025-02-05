@@ -4,14 +4,12 @@ output/
 .env
 
 # モデルや予測結果はGit管理不要
-models/
 results/
 
 # Python関連
 __pycache__/
 *.pyc
 *.pyo
-*.pkl
 *.log
 
 # Jupyter Notebook のキャッシュ
