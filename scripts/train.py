@@ -1,5 +1,10 @@
+import sys
 import os
 import datetime
+
+# カレントディレクトリを sys.path に追加
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from utils.data_loader2 import load_pr_data
 from utils.feature_extractor2 import extract_features
 from utils.model_trainer2 import train_model
