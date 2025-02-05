@@ -39,7 +39,7 @@ jobs:
             echo "No PR JSON data found, skipping prediction."
             exit 1
           fi
-          python predict.py --json_files $PR_JSON_FILES --model_dir models/
+          python scripts/predict.py --json_files $PR_JSON_FILES --model_dir models/
 
       - name: Get prediction results
         run: cat results/predictions.txt
