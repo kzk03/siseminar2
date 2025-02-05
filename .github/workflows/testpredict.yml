@@ -1,5 +1,8 @@
 name: Train Model with PR Data
 
+env:
+  PYTHONPATH: ${{ github.workspace }}
+
 on:
   pull_request:
     types:
