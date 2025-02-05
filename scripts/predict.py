@@ -2,6 +2,53 @@ import joblib
 import numpy as np
 import os
 import glob
+import os
+import datetime
+import json
+from collections import Counter
+
+def load_pr_data(data_path):
+    """PRデータを読み込む"""
+    pr_data = []
+    for file in os.listdir(data_path):
+        if file.endswith(".json"):
+            with open(os.path.join(data_path, file), 'r') as f:
+                pr_data.append(json.load(f))
+    return pr_data
+
+
+def extract_features(pr_data, start_date=None, end_date=None):
+    """PRデータから特徴量を抽出"""
+    metrics_list = []
+    objective_list = []
+
+    for pr in pr_data:
+        pull_request = pr.get("pull_request", {})
+
+        # `created_at` の取得と変換
+        created_at = pull_request.get("created_at", "2025-02-01T00:00:00Z")
+        created_at = datetime.datetime.strptime(created_at, "%Y-%m-%dT%H:%M:%SZ").date()
+
+        if start_date and end_date and not (start_date <= created_at <= end_date):
+            continue
+
+        metrics_list.append([
+            pull_request.get('comments', 0),  # コメント数
+            pull_request.get('additions', 0), # 追加行数
+            pull_request.get('deletions', 0)  # 削除行数
+        ])
+
+        # `review_comments` の取得方法修正
+        review_comments = pull_request.get("review_comments", 0)
+        is_positive = review_comments > 0
+        objective_list.append(1 if is_positive else 0)
+
+    # クラス分布のチェック
+    class_counts = Counter(objective_list)
+    print(f"Class distribution after feature extraction: {class_counts}")
+
+    return metrics_list, objective_list
+
 
 def get_latest_model(model_dir):
     """
@@ -21,16 +68,27 @@ def get_latest_model(model_dir):
 
     return latest_model
 
-def predict_with_model(model_dir, metrics_list):
+def predict_with_model(model_dir, pr_data_path, start_date, end_date):
     """
     GitHubリポジトリ内のmodelsディレクトリにある最新モデルを用いて予測を実行
     :param model_dir: モデルが保存されているディレクトリ
-    :param metrics_list: 予測に使用する特徴量 (X)
+    :param pr_data_path: PRデータが保存されているディレクトリ
+    :param start_date: 特徴量抽出の開始日
+    :param end_date: 特徴量抽出の終了日
     :return: 予測結果のリスト
     """
-    if not metrics_list:
-        raise ValueError("Error: Input data (metrics_list) is empty.")
+    # PRデータをロード
+    print(f"Loading PR data from {pr_data_path}...")
+    pr_data = load_pr_data(pr_data_path)
 
+    # 特徴量を抽出
+    print(f"Extracting features from {start_date} to {end_date}...")
+    metrics_list, _ = extract_features(pr_data, start_date, end_date)
+
+    if not metrics_list:
+        raise ValueError("Error: No valid features extracted from PR data.")
+
+    # 最新のモデルを取得
     model_path = get_latest_model(model_dir)
     if model_path is None:
         raise FileNotFoundError("No valid model file found. Please train a model first.")
@@ -48,12 +106,17 @@ def predict_with_model(model_dir, metrics_list):
 
     return predictions
 
-# テスト実行（リポジトリの models ディレクトリを指定）
 if __name__ == "__main__":
     model_directory = "models"
-    test_features = [[5, 120, 30], [2, 50, 10]]  # テスト用の特徴量リスト
+    pr_data_directory = "pr_data"
+    today = datetime.date.today()
+
+    # 日付を datetime.date に変換
+    start_date = today - datetime.timedelta(days=30)
+    end_date = today
+
     try:
-        results = predict_with_model(model_directory, test_features)
+        results = predict_with_model(model_directory, pr_data_directory, start_date, end_date)
         print("Prediction results:", results)
     except Exception as e:
         print(f"Error during prediction: {e}")
