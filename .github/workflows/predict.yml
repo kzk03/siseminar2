@@ -55,14 +55,11 @@ jobs:
           COMMENT_BODY+="\`\`\`\n"
           COMMENT_BODY+=$(cat results/formatted_predictions.txt)
           COMMENT_BODY+="\n\`\`\`"
-          echo -e "$COMMENT_BODY" > results/comment.txt
+          echo "$COMMENT_BODY" > results/comment.txt
 
       - name: Add PR comment
         uses: mshick/add-pr-comment@v2
         with:
           message: |
-            ${{ steps.format_comment.outputs.comment_body }}
-        env:
-          comment_body: $(cat results/comment.txt)
-
+            $(cat results/comment.txt)
 
