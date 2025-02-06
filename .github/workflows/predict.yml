@@ -48,8 +48,9 @@ jobs:
           echo "📊 **予測されたPR番号 (上位 10 件)**:" > results/comment.txt
           echo "" >> results/comment.txt
           echo "\`\`\`" >> results/comment.txt
-          cut -d ":" -f2 results/predictions.txt | head -n 10 >> results/comment.txt
+          cut -d ":" -f2,3 results/predictions.txt | head -n 10 >> results/comment.txt
           echo "\`\`\`" >> results/comment.txt
+
 
       - name: Add PR comment
         run: |
