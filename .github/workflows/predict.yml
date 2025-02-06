@@ -45,23 +45,13 @@ jobs:
 
       - name: Format prediction results
         run: |
-          echo "| 予測スコア | PR番号 |" > results/formatted_predictions.txt
-          echo "|------------|--------|" >> results/formatted_predictions.txt
-          head -n 10 results/predictions.txt | awk -F ":" '{print "| " $1 " | " $2 " |"}' >> results/formatted_predictions.txt
-
-      - name: Post prediction results to PR
-        run: |
-          echo "📊 **予測結果 (上位 10 件)**:" > results/comment.txt
+          echo "📊 **予測されたPR番号 (上位 10 件)**:" > results/comment.txt
           echo "" >> results/comment.txt
           echo "\`\`\`" >> results/comment.txt
-          cat results/formatted_predictions.txt >> results/comment.txt
+          cut -d ":" -f2 results/predictions.txt | head -n 10 >> results/comment.txt
           echo "\`\`\`" >> results/comment.txt
-          COMMENT_BODY=$(cat results/comment.txt)
-          echo "COMMENT_BODY<<EOF" >> $GITHUB_ENV
-          echo "$COMMENT_BODY" >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
 
       - name: Add PR comment
         uses: mshick/add-pr-comment@v2
         with:
-          message: ${{ env.COMMENT_BODY }}
+          message: file://results/comment.txt
