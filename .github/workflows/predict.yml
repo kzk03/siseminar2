@@ -55,11 +55,9 @@ jobs:
           COMMENT_BODY+="\`\`\`\n"
           COMMENT_BODY+=$(cat results/formatted_predictions.txt)
           COMMENT_BODY+="\n\`\`\`"
-          echo "$COMMENT_BODY" > results/comment.txt
+          echo "$COMMENT_BODY" >> $GITHUB_ENV  # 環境変数に格納
 
       - name: Add PR comment
         uses: mshick/add-pr-comment@v2
         with:
-          message: |
-            $(cat results/comment.txt)
-
+          message: ${{ env.COMMENT_BODY }}
