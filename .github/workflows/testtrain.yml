@@ -3,13 +3,6 @@ name: Train Model with PR Data
 on:
   schedule:
     - cron: "35 1 * * *"  # 毎日 15:00 UTC (日本時間 24:00) に実行
-on:
-  pull_request:
-    types:
-      - opened
-      - synchronize
-      - reopened
-      - closed
 
 jobs:
   train_model:
