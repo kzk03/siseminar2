@@ -20,7 +20,7 @@ jobs:
         run: |
           git fetch origin main || echo "No main branch found"
           git checkout main || git checkout -b main
-          mkdir -p pr_data models
+          mkdir -p pr_data models results
           cp -r pr_data/* pr_data/ || echo "No PR data found."
           cp models/*.pkl models/ || echo "No trained model found."
 
@@ -39,7 +39,7 @@ jobs:
             echo "No PR JSON data found, skipping prediction."
             exit 1
           fi
-          python scripts/predict.py --json_files $PR_JSON_FILES --model_dir models/
+          python scripts/predict.py --json_files $PR_JSON_FILES --model_dir models/ > results/predictions.txt
 
       - name: Get prediction results
         run: cat results/predictions.txt
@@ -47,4 +47,8 @@ jobs:
       - name: Post prediction results to PR
         uses: mshick/add-pr-comment@v2
         with:
-          message: "📊 **予測結果**:\n$(cat results/predictions.txt)"
+          message: |
+            📊 **予測結果**:
+            ```
+            $(cat results/predictions.txt)
+            ```
