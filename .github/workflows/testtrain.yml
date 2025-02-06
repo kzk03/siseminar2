@@ -1,12 +1,9 @@
 name: Train Model with PR Data
 
+
 on:
-  pull_request:
-    types:
-      - opened
-      - synchronize
-      - reopened
-      - closed
+  schedule:
+    - cron: '50 19 * * *'  # 毎日午前3時(JST)に実行 (18:00 UTC)
 
 jobs:
   train_model:
