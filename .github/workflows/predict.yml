@@ -49,7 +49,7 @@ jobs:
           echo "|------------|--------|" >> results/formatted_predictions.txt
           head -n 10 results/predictions.txt | awk -F ":" '{print "| " $1 " | " $2 " |"}' >> results/formatted_predictions.txt
 
-            - name: Post prediction results to PR
+      - name: Post prediction results to PR
         run: |
           echo "📊 **予測結果 (上位 10 件)**:" > results/comment.txt
           echo "" >> results/comment.txt
