@@ -108,7 +108,11 @@ def predict_with_model(model_dir, pr_data_path, start_date, end_date):
     prediction_scores = model.predict_proba(X)[:, 1]  # 1クラス（肯定クラス）の確率のみ取得
 
     # スコアとPR番号を結合
-    results = [f"{score:.2f}:{num}" for score, num in zip(prediction_scores, pr_numbers)]
+    results = sorted(
+        [f"{score:.2f}:{num}" for score, num in zip(prediction_scores, pr_numbers)], 
+        key=lambda x: float(x.split(":")[0]), 
+        reverse=True  # 降順にする
+    )
 
     #print("Prediction scores:", results)
     return results
