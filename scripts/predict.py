@@ -2,9 +2,9 @@ import joblib
 import numpy as np
 import os
 import glob
-import os
 import datetime
 import json
+import sys
 from collections import Counter
 
 def load_pr_data(data_path):
@@ -45,7 +45,7 @@ def extract_features(pr_data, start_date=None, end_date=None):
 
     # クラス分布のチェック
     class_counts = Counter(objective_list)
-    print(f"Class distribution after feature extraction: {class_counts}")
+    print(f"Class distribution after feature extraction: {class_counts}", file=sys.stderr)
 
     return metrics_list, objective_list
 
@@ -59,22 +59,23 @@ def get_latest_model(model_dir):
     model_files = glob.glob(os.path.join(model_dir, "*.pkl"))
 
     if not model_files:
-        print("Error: No model file found in the directory.")
+        print("Error: No model file found in the directory.", file=sys.stderr)
         return None
 
     # 最も新しいモデルを選択（更新日時が最新のもの）
     latest_model = max(model_files, key=os.path.getmtime)
-    print(f"Using latest model: {latest_model}")
+    print(f"Using latest model: {latest_model}", file=sys.stderr)
 
     return latest_model
 
-def predict_with_model(model_dir, pr_data_path, start_date, end_date):
+
+def predict_with_model(model_dir, pr_data_path, start_date, end_date, output_file="results/predictions.txt"):
     """GitHubリポジトリ内のmodelsディレクトリにある最新モデルを用いて予測を実行"""
     
-    print(f"Loading PR data from {pr_data_path}...")
+    print(f"Loading PR data from {pr_data_path}...", file=sys.stderr)
     pr_data = load_pr_data(pr_data_path)
 
-    print(f"Extracting features from {start_date} to {end_date}...")
+    print(f"Extracting features from {start_date} to {end_date}...", file=sys.stderr)
     metrics_list = []
     pr_numbers = []  # PR番号を保存するリスト
 
@@ -102,7 +103,7 @@ def predict_with_model(model_dir, pr_data_path, start_date, end_date):
         raise FileNotFoundError("No valid model file found. Please train a model first.")
 
     model = joblib.load(model_path)
-    print("Model loaded successfully.")
+    print("Model loaded successfully.", file=sys.stderr)
 
     X = np.array(metrics_list)
     prediction_scores = model.predict_proba(X)[:, 1]  # 1クラス（肯定クラス）の確率のみ取得
@@ -114,7 +115,14 @@ def predict_with_model(model_dir, pr_data_path, start_date, end_date):
         reverse=True  # 降順にする
     )
 
-    #print("Prediction scores:", results)
+    # 結果をファイルに保存
+    os.makedirs(os.path.dirname(output_file), exist_ok=True)  # ディレクトリがない場合は作成
+    with open(output_file, "w") as f:
+        for result in results:
+            f.write(result + "\n")
+
+    print(f"Prediction completed. Results saved in {output_file}", file=sys.stderr)
+
     return results
 
 
@@ -129,7 +137,6 @@ if __name__ == "__main__":
 
     try:
         results = predict_with_model(model_directory, pr_data_directory, start_date, end_date)
-        print("Prediction scores:", results)  # 0または1ではなくスコアを出力
+        print("Prediction scores saved.", file=sys.stderr)
     except Exception as e:
-        print(f"Error during prediction: {e}")
-
+        print(f"Error during prediction: {e}", file=sys.stderr)
