@@ -69,42 +69,50 @@ def get_latest_model(model_dir):
     return latest_model
 
 def predict_with_model(model_dir, pr_data_path, start_date, end_date):
-    """
-    GitHubリポジトリ内のmodelsディレクトリにある最新モデルを用いて予測を実行
-    :param model_dir: モデルが保存されているディレクトリ
-    :param pr_data_path: PRデータが保存されているディレクトリ
-    :param start_date: 特徴量抽出の開始日
-    :param end_date: 特徴量抽出の終了日
-    :return: 予測結果のリスト（分類前のスコア）
-    """
-    # PRデータをロード
+    """GitHubリポジトリ内のmodelsディレクトリにある最新モデルを用いて予測を実行"""
+    
     print(f"Loading PR data from {pr_data_path}...")
     pr_data = load_pr_data(pr_data_path)
 
-    # 特徴量を抽出
     print(f"Extracting features from {start_date} to {end_date}...")
-    metrics_list, _ = extract_features(pr_data, start_date, end_date)
+    metrics_list = []
+    pr_numbers = []  # PR番号を保存するリスト
+
+    for pr in pr_data:
+        pull_request = pr.get("pull_request", {})
+        created_at = pull_request.get("created_at", "2025-02-01T00:00:00Z")
+        created_at = datetime.datetime.strptime(created_at, "%Y-%m-%dT%H:%M:%SZ").date()
+
+        if start_date and end_date and not (start_date <= created_at <= end_date):
+            continue
+
+        metrics_list.append([
+            pull_request.get('comments', 0),
+            pull_request.get('additions', 0),
+            pull_request.get('deletions', 0)
+        ])
+
+        pr_numbers.append(pr.get("number", "N/A"))  # PR番号を取得
 
     if not metrics_list:
         raise ValueError("Error: No valid features extracted from PR data.")
 
-    # 最新のモデルを取得
     model_path = get_latest_model(model_dir)
     if model_path is None:
         raise FileNotFoundError("No valid model file found. Please train a model first.")
 
-    # モデルをロード
     model = joblib.load(model_path)
     print("Model loaded successfully.")
 
-    # 特徴量を numpy array に変換
     X = np.array(metrics_list)
-
-    # 予測確率を取得
     prediction_scores = model.predict_proba(X)[:, 1]  # 1クラス（肯定クラス）の確率のみ取得
-    print("Prediction probabilities complete.")
 
-    return prediction_scores
+    # スコアとPR番号を結合
+    results = [f"{score:.2f}:{num}" for score, num in zip(prediction_scores, pr_numbers)]
+
+    #print("Prediction scores:", results)
+    return results
+
 
 if __name__ == "__main__":
     model_directory = "models"
