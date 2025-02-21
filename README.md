@@ -82,5 +82,3 @@ JSONの破損データをスキップして処理。
 貢献方法
 
 Issueを作成し、バグ報告や機能提案を行う。
-
-23fsdgdfsgwwefwesfgews
